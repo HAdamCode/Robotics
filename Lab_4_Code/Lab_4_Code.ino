@@ -41,7 +41,7 @@
 #define EncoderMotorRight 10
 
 
-#define FORWARD             0
+#define FORWARD             2
 #define LEFT                1
 #define RIGHT               -1
 
@@ -58,7 +58,8 @@ HCSR04 sideUS(trig, echo);
 
 int i = 0;
 int moves[50]; // Empty array of 50 moves, probably more than needed, just in case
-
+int finishedMoves[50];
+int pos[50][2];
 
 
 
@@ -146,24 +147,36 @@ float readSideDist() {
 
 
 void explore() {
+  int direction = 0;
+  int currentX = 0;
+  int currentY = 0;
   while (digitalRead(pushButton) == 1) { //while maze is not solved
     // Read distances
     float side = readSideDist();
     float front = readFrontDist();
-//    Serial.print("Side dist: ");
-//    Serial.println(side);
-    Serial.print("Forward dist: ");
-    Serial.println(front);
     if (side > wallTol && front > wallTol) {
-      // drive forward
-      // Record action
       Serial.println("LEFT");
       turn(15, 26);
       moves[i] = LEFT;
-      i++;
+      direction--;
+      
       Serial.println("FORWARD");
       driveForward(15, 25);
       moves[i] = FORWARD;
+      if (direction % 4 == 0) {
+        currentY++;
+      } else if (direction % 4 == 1) {
+        currentX++;
+      } else if (direction % 4 == 2) {
+        currentY--;
+      } else {
+        currentX--;
+      }
+      pos[i][0] = currentX;
+      pos[i][1] = currentY;
+      i++;
+      pos[i][0] = currentX;
+      pos[i][1] = currentY;
       i++;
     }
     else if (side > wallTol) {// If side is not a wall
@@ -172,10 +185,25 @@ void explore() {
       Serial.println("LEFT");
       turn(15, 26);
       moves[i] = LEFT;
-      i++;
+      direction--;
+      
       Serial.println("FORWARD");
       driveForward(15, 25);
       moves[i] = FORWARD;
+      if (direction % 4 == 0) {
+        currentY++;
+      } else if (direction % 4 == 1) {
+        currentX++;
+      } else if (direction % 4 == 2) {
+        currentY--;
+      } else {
+        currentX--;
+      }
+      pos[i][0] = currentX;
+      pos[i][1] = currentY;
+      i++;
+      pos[i][0] = currentX;
+      pos[i][1] = currentY;
       i++;
     }
     else if (front > wallTol) {// else if front is not a wall
@@ -184,6 +212,17 @@ void explore() {
       Serial.println("FORWARD");
       driveForward(15, 25);
       moves[i] = FORWARD;
+      if (direction % 4 == 0) {
+        currentY++;
+      } else if (direction % 4 == 1) {
+        currentX++;
+      } else if (direction % 4 == 2) {
+        currentY--;
+      } else {
+        currentX--;
+      }
+      pos[i][0] = currentX;
+      pos[i][1] = currentY;
       i++;
     } else {
       // turn away from side
@@ -191,43 +230,72 @@ void explore() {
       Serial.println("RIGHT");
       turn(15, -26);
       moves[i] = RIGHT;
+      direction++;
+      pos[i][0] = currentX;
+      pos[i][1] = currentY;
       i++;
     }
   }
 }
 
 
-void reverseArray(int arr[], int size) {
-  for (int i = 0; i < size/2; i++) {
-    int temp = arr[i];
-    arr[i] = arr[size - i - 1];
-    arr[size - i - 1] = temp;
-  }
-}
-
-
-
 void solve() {
   // Write your own algorithm to solve the maze using the list of moves from explore
- 
-  // Pseudo-code for solving the maze
-  // Reverse the moves list since we want to backtrack
+  int currentX = 0;
+  int currentY = 0;
+  int previousX = 0;
+  int previousY = 0;
+  int j = 0;
+ for (int i = 0; i < 50; i++) {
+  if (i != 0 && pos[i][0] == 0 && pos[i][1] == 0) break;
 
-  reverseArray(moves, sizeof(moves) / sizeof(moves[0]));
-
-  // Loop over the moves and create a new path that represents the optimal solution
-  for (int j = 0; j < i; j++) {
-    // Invert the turns to get back
-    if (moves[j] == LEFT) {
-      moves[j] = RIGHT;
-    } else if (moves[j] == RIGHT) {
-      moves[j] = LEFT;
-    }
-    // FORWARD stays the same
+  if (moves[i] == LEFT) {
+    currentX = pos[i+1][0];
+    currentY = pos[i+1][1];
+    i++;
+  } else {
+    currentX = pos[i][0];
+    currentY = pos[i][1];
   }
 
+  
 
- 
+  int positionToGoTo = 0;
+  for (int k = 49; k > i; k--) {
+    if (currentX == pos[k][0] && currentY == pos[k][1]) {
+      positionToGoTo = k;
+      i = k;
+      if (previousX == pos[k+1][0] || previousY == pos[k+1][1]) {
+    finishedMoves[j] = moves[i];
+  j++;
+      } else {
+        finishedMoves[j] = moves[i];
+  j++;
+        finishedMoves[j] = RIGHT;
+        j++;
+      }
+      break;
+    }
+  }
+  if (positionToGoTo == 0) {
+    finishedMoves[j] = moves[i];
+  j++;
+    if (moves[i-1] == LEFT) {
+          finishedMoves[j] = LEFT;
+          j++;
+        }
+  }
+ }
+ previousX = currentX;
+ previousY = currentY;
+
+   for (int i = 0; i < 50; i++) {
+//    Serial.print("X: ");
+//    Serial.print(pos[i][0]);
+//    Serial.print(", Y: ");
+//    Serial.println(pos[i][1]);
+Serial.println(finishedMoves[i]);
+  }
 }
 
 
@@ -240,16 +308,16 @@ void solve() {
 void runMaze() {
   
   // Execute each move in the moves array to run through the maze
-  for (int j = 0; j < i; j++) {
-    if (moves[j] == FORWARD) {
+  for (int j = 0; j < 50; j++) {
+    if (finishedMoves[j] == FORWARD) {
       // call the function to drive forward
-      driveForward(15, 20); // Assuming 20 is the distance for one cell
-    } else if (moves[j] == LEFT) {
+      driveForward(15, 25); // Assuming 20 is the distance for one cell
+    } else if (finishedMoves[j] == LEFT) {
       // call the function to turn left
-      turn(15, 90); // Assuming a 90 degree turn
-    } else if (moves[j] == RIGHT) {
+      turn(15, 26); // Assuming a 90 degree turn
+    } else if (finishedMoves[j] == RIGHT) {
       // call the function to turn right
-      turn(15, -90); // Assuming a 90 degree turn
+      turn(15, -26); // Assuming a 90 degree turn
     }
     // Include any necessary delay or checks to ensure the movement completes before continuing
   }

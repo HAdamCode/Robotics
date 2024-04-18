@@ -43,10 +43,6 @@ unsigned long nextPDtime = 0;
 int printDelay = 200;
 unsigned long nextPrintTime = printDelay;
 
-#define FORWARD             0
-#define LEFT                1
-#define RIGHT               -1
-
 //int moves[] = {31 ,LEFT, 28, LEFT, 29, RIGHT, 107, RIGHT, 67, RIGHT, 34}; // Fill in this array will forward distances and turn directions in the maze (Like part A)
 //int turns[] = {LEFT, LEFT, RIGHT, RIGHT,  RIGHT};
 
