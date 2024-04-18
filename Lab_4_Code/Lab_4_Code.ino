@@ -157,8 +157,12 @@ void explore() {
     if (side > wallTol && front > wallTol) {
       // drive forward
       // Record action
+      Serial.println("LEFT");
+      turn(15, 26);
+      moves[i] = LEFT;
+      i++;
       Serial.println("FORWARD");
-      driveForward(15, 20);
+      driveForward(15, 25);
       moves[i] = FORWARD;
       i++;
     }
@@ -168,6 +172,10 @@ void explore() {
       Serial.println("LEFT");
       turn(15, 26);
       moves[i] = LEFT;
+      i++;
+      Serial.println("FORWARD");
+      driveForward(15, 25);
+      moves[i] = FORWARD;
       i++;
     }
     else if (front > wallTol) {// else if front is not a wall
