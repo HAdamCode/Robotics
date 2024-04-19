@@ -41,9 +41,9 @@
 #define EncoderMotorRight 10
 
 
-#define FORWARD             2
-#define LEFT                1
-#define RIGHT               -1
+#define FORWARD             3
+#define LEFT                2
+#define RIGHT               4
 
 
 // if side sensor is Ultrasonic
@@ -152,7 +152,7 @@ void explore() {
   int currentY = 0;
   while (digitalRead(pushButton) == 1) { //while maze is not solved
     // Read distances
-    float side = readSideDist();
+    float side = readSideDist()-2;
     float front = readFrontDist();
     if (side > wallTol && front > wallTol) {
       Serial.println("LEFT");
@@ -162,7 +162,7 @@ void explore() {
       
       Serial.println("FORWARD");
       driveForward(15, 25);
-      moves[i] = FORWARD;
+      moves[i+1] = FORWARD;
       if (direction % 4 == 0) {
         currentY++;
       } else if (direction % 4 == 1) {
@@ -189,7 +189,7 @@ void explore() {
       
       Serial.println("FORWARD");
       driveForward(15, 25);
-      moves[i] = FORWARD;
+      moves[i+1] = FORWARD;
       if (direction % 4 == 0) {
         currentY++;
       } else if (direction % 4 == 1) {
@@ -236,6 +236,21 @@ void explore() {
       i++;
     }
   }
+  Serial.println("Explore");
+  for (int i = 0; i < 50; i++) {
+    Serial.print(" X: ");
+    Serial.print(pos[i][0]);
+    Serial.print(" Y: ");
+    Serial.print(pos[i][1]);
+    Serial.print(" Direction: ");
+    if (moves[i] == LEFT) {
+      Serial.println("LEFT");
+    } else if (moves[i] == RIGHT) {
+      Serial.println("RIGHT");
+    } else {
+      Serial.println("FORWARD");
+    }
+  }
 }
 
 
@@ -248,29 +263,35 @@ void solve() {
   int j = 0;
  for (int i = 0; i < 50; i++) {
   if (i != 0 && pos[i][0] == 0 && pos[i][1] == 0) break;
-
+  bool isLeft = false;
   if (moves[i] == LEFT) {
-    currentX = pos[i+1][0];
-    currentY = pos[i+1][1];
-    i++;
-  } else {
-    currentX = pos[i][0];
-    currentY = pos[i][1];
+//    isLeft = true;
+    finishedMoves[j] = LEFT;
+    j++;
+    continue;
   }
+  
+  currentX = pos[i][0];
+  currentY = pos[i][1];
+  int currentMove = moves[i];
+  int nextMove = moves[i+1];
 
   
 
   int positionToGoTo = 0;
   for (int k = 49; k > i; k--) {
-    if (currentX == pos[k][0] && currentY == pos[k][1]) {
+    if (currentX == pos[k][0] && currentY == pos[k][1] && moves[k] != LEFT && moves[k] != RIGHT) {
       positionToGoTo = k;
       i = k;
       if (previousX == pos[k+1][0] || previousY == pos[k+1][1]) {
-    finishedMoves[j] = moves[i];
-  j++;
+        finishedMoves[j] = currentMove;
+        j++;
+        if (moves[k+1] == LEFT) {
+          i++;
+        }
       } else {
-        finishedMoves[j] = moves[i];
-  j++;
+        finishedMoves[j] = currentMove;
+        j++;
         finishedMoves[j] = RIGHT;
         j++;
       }
@@ -279,11 +300,7 @@ void solve() {
   }
   if (positionToGoTo == 0) {
     finishedMoves[j] = moves[i];
-  j++;
-    if (moves[i-1] == LEFT) {
-          finishedMoves[j] = LEFT;
-          j++;
-        }
+    j++;
   }
  }
  previousX = currentX;
